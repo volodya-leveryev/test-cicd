@@ -1,0 +1,22 @@
+on: [push]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ github.actor }}/test-cicd .
+
+      - name: Login to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.actor }}/test-cicd
+
+      - name: Deploy on server
+        run: |
+          echo ${{ secrets.SSH_KEY }} > ssh_key
+          ssh -i ssh_key ubuntu@${{ secrets.HOSTNAME }} /home/ubuntu/deploy.sh
